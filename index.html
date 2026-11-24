@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bugün Ne İzlesem? - Ruh Hali Asistanı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+        }
+        .mood-card {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .mood-card:hover {
+            transform: translateY(-4px);
+        }
+        .mood-card.active {
+            border-color: #6366f1;
+            background: linear-gradient(145deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.15));
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.35);
+        }
+        .movie-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .movie-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Navbar -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-film text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Bugün Ne İzlesem?</h1>
+                    <p class="text-xs text-slate-400">Ruh Hali Tabanlı Film Asistanı</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="openFavoritesModal()" class="relative px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium text-slate-200 transition flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-bookmark text-amber-400"></i>
+                    <span class="hidden sm:inline">İzleme Listem</span>
+                    <span id="favCountBadge" class="bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="openApiModal()" id="apiStatusBtn" class="px-3.5 py-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-sm font-medium transition flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span>Demo Modu</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        
+        <!-- Hero & Mood Selector -->
+        <section class="mb-10">
+            <div class="text-center max-w-2xl mx-auto mb-8">
+                <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-3">Şu an modun nasıl?</h2>
+                <p class="text-slate-400 text-sm sm:text-base">Ruh halini ve vaktini seç; TMDB REST API ve YouTube entegrasyonu ile sana en uygun filmleri saniyeler içinde bulalım.</p>
+            </div>
+
+            <!-- Mood Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6" id="moodGrid">
+                <button onclick="selectMood('chill', this)" class="mood-card active p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-left flex flex-col justify-between h-28">
+                    <span class="text-2xl">🍿</span>
+                    <div>
+                        <div class="font-bold text-sm text-white">Kafa Dağıtmalık</div>
+                        <div class="text-xs text-slate-400">Komedi & Macera</div>
+                    </div>
+                </button>
+                <button onclick="selectMood('mindblowing', this)" class="mood-card p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-left flex flex-col justify-between h-28">
+                    <span class="text-2xl">🤯</span>
+                    <div>
+                        <div class="font-bold text-sm text-white">Beyin Yakan</div>
+                        <div class="text-xs text-slate-400">Bilim Kurgu & Gizem</div>
+                    </div>
+                </button>
+                <button onclick="selectMood('adrenaline', this)" class="mood-card p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-left flex flex-col justify-between h-28">
+                    <span class="text-2xl">🔥</span>
+                    <div>
+                        <div class="font-bold text-sm text-white">Adrenalin</div>
+                        <div class="text-xs text-slate-400">Aksiyon & Gerilim</div>
+                    </div>
+                </button>
+                <button onclick="selectMood('emotional', this)" class="mood-card p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-left flex flex-col justify-between h-28">
+                    <span class="text-2xl">🥹</span>
+                    <div>
+                        <div class="font-bold text-sm text-white">Duygusal</div>
+                        <div class="text-xs text-slate-400">Dram & Romantik</div>
+                    </div>
+                </button>
+                <button onclick="selectMood('horror', this)" class="mood-card p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-left flex flex-col justify-between h-28">
+                    <span class="text-2xl">👻</span>
+                    <div>
+                        <div class="font-bold text-sm text-white">Gerilim & Korku</div>
+                        <div class="text-xs text-slate-400">Karanlık Atmosfer</div>
+                    </div>
+                </button>
+                <button onclick="selectMood('nostalgic', this)" class="mood-card p-4 rounded-2xl bg-slate-900/90 border border-slate-800 text-left flex flex-col justify-between h-28">
+                    <span class="text-2xl">🎞️</span>
+                    <div>
+                        <div class="font-bold text-sm text-white">Nostaljik</div>
+                        <div class="text-xs text-slate-400">Kült & Klasikler</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Filters Bar -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-indigo-400"></i>
+                        <label for="durationFilter" class="text-xs font-medium text-slate-300">Süre:</label>
+                        <select id="durationFilter" onchange="fetchMovies()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
+                            <option value="all">Fark Etmez</option>
+                            <option value="110">Kısa (< 110 dk)</option>
+                            <option value="140">Orta (< 140 dk)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-star text-amber-400"></i>
+                        <label for="ratingFilter" class="text-xs font-medium text-slate-300">Min Puan:</label>
+                        <select id="ratingFilter" onchange="fetchMovies()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500">
+                            <option value="6.5">6.5+ IMDb/TMDB</option>
+                            <option value="7.5" selected>7.5+ İyi Filmler</option>
+                            <option value="8.0">8.0+ Başyapıtlar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button onclick="pickRandomMovie()" class="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-lg shadow-indigo-500/25 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-shuffle"></i>
+                        <span>Kararsızım, Rastgele Seç!</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Status / Loader -->
+        <div id="loader" class="hidden py-16 text-center">
+            <div class="inline-block w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p class="text-sm text-slate-400">API üzerinden filmler getiriliyor...</p>
+        </div>
+
+        <!-- Error Banner -->
+        <div id="errorBanner" class="hidden mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-circle-exclamation text-red-400"></i>
+                <span id="errorText">API bağlantısında bir sorun oluştu.</span>
+            </div>
+            <button onclick="document.getElementById('errorBanner').classList.add('hidden')" class="text-red-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Movies Grid -->
+        <section>
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <span id="sectionTitle">Kafa Dağıtmalık Öneriler</span>
+                    <span id="resultCount" class="text-xs font-normal text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full"></span>
+                </h3>
+                <span id="dataSourceBadge" class="text-xs text-slate-400">Kaynak: Yerel Demo Veri Tabanı</span>
+            </div>
+            <div id="moviesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-900/40 py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            <p>Web Programlama Dersi API Projesi • TMDB REST API & YouTube Embed Entegrasyonu</p>
+        </div>
+    </footer>
+
+    <!-- Trailer & Detail Modal -->
+    <div id="movieModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between p-4 border-b border-slate-800">
+                <h3 id="modalTitle" class="font-bold text-lg text-white">Film Detayı</h3>
+                <button onclick="closeMovieModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <div id="trailerContainer" class="aspect-video w-full bg-slate-950 rounded-xl overflow-hidden mb-4 flex items-center justify-center border border-slate-800">
+                    <!-- YouTube iframe -->
+                </div>
+                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-300 mb-3" id="modalMeta"></div>
+                <p id="modalOverview" class="text-sm text-slate-300 leading-relaxed mb-5"></p>
+                <div class="flex justify-end gap-3">
+                    <button id="modalFavBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition flex items-center gap-2">
+                        <i class="fa-regular fa-bookmark"></i> İzleme Listesine Ekle
+                    </button>
+                    <button onclick="closeMovieModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div id="apiModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-lg text-white">TMDB API Bağlantısı</h3>
+                <button onclick="closeApiModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                Uygulama şu an örnek verilerle çalışmaktadır. <strong>themoviedb.org</strong> üzerinden ücretsiz aldığınız v3 API Anahtarını aşağıya girerek canlı REST API verilerini aktif edebilirsiniz.
+            </p>
+            <label class="block text-xs font-medium text-slate-300 mb-1.5">TMDB API Key (v3 auth)</label>
+            <input type="text" id="apiKeyInput" placeholder="Örn: a1b2c3d4e5f6g7h8i9j0..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white mb-4 focus:outline-none focus:border-indigo-500">
+            <div class="flex justify-between items-center gap-2">
+                <button onclick="clearApiKey()" class="text-xs text-slate-400 hover:text-red-400">Demo Moduna Dön</button>
+                <div class="flex gap-2">
+                    <button onclick="closeApiModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-300">İptal</button>
+                    <button onclick="saveApiKey()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">Kaydet ve Bağlan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites Modal -->
+    <div id="favoritesModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-lg text-white flex items-center gap-2">
+                    <i class="fa-solid fa-bookmark text-amber-400"></i> İzleme Listem
+                </h3>
+                <button onclick="closeFavoritesModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="favoritesList" class="overflow-y-auto space-y-3 flex-grow pr-1"></div>
+        </div>
+    </div>
+
+    <script>
+        // Durum Yönetimi
+        let currentMood = 'chill';
+        let currentMovies = [];
+        let apiKey = localStorage.getItem('tmdb_api_key') || '';
+        let favorites = JSON.parse(localStorage.getItem('movie_favorites') || '[]');
+
+        // Ruh Hali -> TMDB Tür ID Eşleştirmesi
+        const MOOD_CONFIG = {
+            chill: { title: 'Kafa Dağıtmalık Öneriler', genres: '35,12', releaseLte: '2026-12-31' },
+            mindblowing: { title: 'Beyin Yakan Bilim Kurgu & Gizem', genres: '878,9648', releaseLte: '2026-12-31' },
+            adrenaline: { title: 'Yüksek Adrenalin & Aksiyon', genres: '28,53', releaseLte: '2026-12-31' },
+            emotional: { title: 'Duygusal & Dokunaklı Filmler', genres: '18,10749', releaseLte: '2026-12-31' },
+            horror: { title: 'Gerilim & Korku Gecesi', genres: '27,53', releaseLte: '2026-12-31' },
+            nostalgic: { title: 'Unutulmaz Nostaljik Klasikler', genres: '18,12,35', releaseLte: '2005-12-31' }
+        };
+
+        // Zengin Yerel Demo Veri Seti (API anahtarı olmadan tam deneyim için)
+        const DEMO_MOVIES = [
+            { id: 101, mood: 'chill', title: 'The Grand Budapest Hotel', year: 2014, rating: 8.1, runtime: 99, genre: 'Komedi • Macera', poster: 'https://image.tmdb.org/t/p/w500/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', overview: 'İki savaş arasındaki dönemde ünlü bir Avrupa otelinin efsanevi kapıcısı Gustave H. ile lobi görevlisi Zero arasındaki dostluk ve çalınan paha biçilmez bir Rönesans tablosunun hikayesi.', trailerKey: '1Fg5iWmQjwk' },
+            { id: 102, mood: 'chill', title: 'Knives Out (Bıçaklar Çekildi)', year: 2019, rating: 7.9, runtime: 130, genre: 'Komedi • Gizem', poster: 'https://image.tmdb.org/t/p/w500/pThyQovXQrw2m0s9x82twj48Jq4.jpg', overview: 'Ünlü polisiye yazarı Harlan Thrombey, 85. doğum günü partisinin hemen ardından malikanesinde ölü bulunur. Dedektif Benoit Blanc tüm aileyi sorguya çeker.', trailerKey: 'qGqiHJTsRkQ' },
+            { id: 103, mood: 'chill', title: 'The Intouchables (Can Dostum)', year: 2011, rating: 8.5, runtime: 112, genre: 'Komedi • Dram', poster: 'https://image.tmdb.org/t/p/w500/1QU7HKgsQbGpzsJbJK4pAVQV9F5.jpg', overview: 'Yamaç paraşütü kazası sonrası boynundan aşağısı felç kalan zengin aristokrat Philippe, bakıcısı olarak banliyölerden gelen enerjik Driss’i işe alır.', trailerKey: '34WIbmXkewU' },
+            { id: 104, mood: 'chill', title: 'The Secret Life of Walter Mitty', year: 2013, rating: 7.3, runtime: 114, genre: 'Macera • Komedi', poster: 'https://image.tmdb.org/t/p/w500/tY6ypjKOOtLjUjQF4160M282H0E.jpg', overview: 'Hayalperest fotoğraf editörü Walter Mitty, kaybolan bir negatifin peşinden İzlanda’dan Himalayalar’a uzanan gerçek bir maceraya atılır.', trailerKey: 'HddkucqSzSM' },
+            { id: 201, mood: 'mindblowing', title: 'Inception (Başlangıç)', year: 2010, rating: 8.4, runtime: 148, genre: 'Bilim Kurgu • Aksiyon', poster: 'https://image.tmdb.org/t/p/w500/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg', overview: 'Rüya paylaşım teknolojisini kullanarak kurumsal sırları çalan Dom Cobb, bu kez bir fikri çalmak değil zihne yerleştirmek zorundadır.', trailerKey: 'YoHD9XEInc0' },
+            { id: 202, mood: 'mindblowing', title: 'Interstellar (Yıldızlararası)', year: 2014, rating: 8.4, runtime: 169, genre: 'Bilim Kurgu • Dram', poster: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', overview: 'İnsanlığın Dünya’daki sonu yaklaşırken bir grup kaşif, insanlık için yeni bir yuva bulmak amacıyla solucan deliğinden geçerek galaksiler arası yolculuğa çıkar.', trailerKey: 'zSWdZVtXT7E' },
+            { id: 203, mood: 'mindblowing', title: 'Arrival (Geliş)', year: 2016, rating: 7.6, runtime: 116, genre: 'Bilim Kurgu • Gizem', poster: 'https://image.tmdb.org/t/p/w500/x2FJsf1ElAgr63Y3PNPtJrcmpoe.jpg', overview: 'Dünyanın dört bir yanına gizemli uzay gemileri indiğinde, dilbilimci Louise Banks uzaylıların amacını çözmek için zamana karşı yarışır.', trailerKey: 'tFMo3UJ4B4g' },
+            { id: 204, mood: 'mindblowing', title: 'Shutter Island (Zindan Adası)', year: 2010, rating: 8.2, runtime: 138, genre: 'Gizem • Gerilim', poster: 'https://image.tmdb.org/t/p/w500/4GDy0PHYX3VRXUtwK5ysFbg3kEx.jpg', overview: '1954 yılında ABD Mareşali Teddy Daniels, akıl hastası suçluların tutulduğu izole bir adadaki hastaneden kaybolan bir hastayı araştırmak üzere adaya gider.', trailerKey: '5iaYLCiq5RM' },
+            { id: 301, mood: 'adrenaline', title: 'Mad Max: Fury Road', year: 2015, rating: 7.6, runtime: 120, genre: 'Aksiyon • Macera', poster: 'https://image.tmdb.org/t/p/w500/8tZYtuWezp8JbcsvHYO0O46tFbo.jpg', overview: 'Kıyamet sonrası çorak topraklarda Max ve İmparatoriçe Furiosa, zalim lider Immortan Joe’nun ordusundan kaçarak yüksek tempolu bir kovalamacaya girer.', trailerKey: 'hEJnMQG9ev8' },
+            { id: 302, mood: 'adrenaline', title: 'John Wick', year: 2014, rating: 7.4, runtime: 101, genre: 'Aksiyon • Gerilim', poster: 'https://image.tmdb.org/t/p/w500/fZPSd91yGE9fCcCe6OoQr6E3Bev.jpg', overview: 'Emekli efsanevi tetikçi John Wick, hayatını mahveden Rus mafyasına karşı intikam almak için yeraltı dünyasına geri döner.', trailerKey: 'C0BMx-qxsP4' },
+            { id: 303, mood: 'adrenaline', title: 'Top Gun: Maverick', year: 2022, rating: 8.2, runtime: 130, genre: 'Aksiyon • Dram', poster: 'https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg', overview: 'Otuz yılı aşkın hizmetin ardından Pete "Maverick" Mitchell, yeni nesil Top Gun mezunlarını imkansız görünen özel bir görev için eğitir.', trailerKey: 'giXco2jaZ_4' },
+            { id: 304, mood: 'adrenaline', title: 'Edge of Tomorrow', year: 2014, rating: 7.6, runtime: 113, genre: 'Aksiyon • Bilim Kurgu', poster: 'https://image.tmdb.org/t/p/w500/xjw5trHV7Mhk61PkpRmRRmnh024.jpg', overview: 'Uzaylı istilasına karşı savaşan Binbaşı William Cage, öldüğü günü sürekli yeniden yaşadığı bir zaman döngüsüne sıkışır.', trailerKey: 'vw61gCe2oqI' },
+            { id: 401, mood: 'emotional', title: 'The Pursuit of Happyness', year: 2006, rating: 7.9, runtime: 117, genre: 'Dram', poster: 'https://image.tmdb.org/t/p/w500/f6l9rghSHORkWLurUGJhaKAiyjY.jpg', overview: 'Evsiz kalan satış temsilcisi Chris Gardner, küçük oğluyla birlikte hayatta kalmaya çalışırken prestijli bir borsa şirketinde stajyerlik mücadelesi verir.', trailerKey: 'DMOBlEcRuw8' },
+            { id: 402, mood: 'emotional', title: 'About Time (Zamanda Aşk)', year: 2013, rating: 7.9, runtime: 123, genre: 'Romantik • Dram', poster: 'https://image.tmdb.org/t/p/w500/iR6bSYFvXE0TilTO71950226681.jpg', overview: '21 yaşına girdiğinde zamanda yolculuk yapabildiğini öğrenen Tim, bu yeteneğini hayatını ve aşkını güzelleştirmek için kullanır.', trailerKey: 'T7A810duHvw' },
+            { id: 403, mood: 'emotional', title: 'La La Land', year: 2016, rating: 7.9, runtime: 128, genre: 'Romantik • Müzikal', poster: 'https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', overview: 'Los Angeles’ta hayallerinin peşinden koşan caz piyanisti Sebastian ile oyuncu adayı Mia’nın tutkulu ama zorlu aşk hikayesi.', trailerKey: '0pdqf4P9MB8' },
+            { id: 404, mood: 'emotional', title: 'Good Will Hunting', year: 1997, rating: 8.2, runtime: 126, genre: 'Dram', poster: 'https://image.tmdb.org/t/p/w500/bABCBKYBK7A5G1x0FzoeoNfuj2.jpg', overview: 'MIT’de hademelik yapan üstün zekalı Will Hunting’in hayatı, bir psikologla kurduğu derin bağ sayesinde değişmeye başlar.', trailerKey: 'PaZVjZEFkRs' },
+            { id: 501, mood: 'horror', title: 'A Quiet Place (Sessiz Bir Yer)', year: 2018, rating: 7.4, runtime: 90, genre: 'Korku • Gerilim', poster: 'https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg', overview: 'Sese duyarlı ölümcül yaratıkların istila ettiği dünyada bir aile hayatta kalmak için tamamen sessiz yaşamak zorundadır.', trailerKey: 'WR7cc5t7tv8' },
+            { id: 502, mood: 'horror', title: 'Get Out (Kapan)', year: 2017, rating: 7.6, runtime: 104, genre: 'Korku • Gizem', poster: 'https://image.tmdb.org/t/p/w500/tFXcEccSQMf3lfhfXKSU9iRBpa3.jpg', overview: 'Kız arkadaşının ailesiyle tanışmak için hafta sonu malikaneye giden Chris, görünüşte sıcak olan bu ortamda karanlık bir gerçeği fark eder.', trailerKey: 'DzfpyUB60YY' },
+            { id: 503, mood: 'horror', title: 'The Conjuring (Korku Seansı)', year: 2013, rating: 7.5, runtime: 112, genre: 'Korku • Gerilim', poster: 'https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg', overview: 'Paranormal araştırmacılar Ed ve Lorraine Warren, ıssız bir çiftlik evinde karanlık bir varlık tarafından terörize edilen aileye yardım etmeye çalışır.', trailerKey: 'k10ETZ41q5o' },
+            { id: 504, mood: 'horror', title: 'Parasite (Parazit)', year: 2019, rating: 8.5, runtime: 132, genre: 'Gerilim • Dram', poster: 'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', overview: 'Yoksul Kim ailesi, zengin Park ailesinin hayatına tek tek sızar; ancak malikanenin bodrumundaki sır her şeyi altüst edecektir.', trailerKey: '5xH0HfJHsaY' },
+            { id: 601, mood: 'nostalgic', title: 'The Truman Show', year: 1998, rating: 8.1, runtime: 103, genre: 'Dram • Komedi', poster: 'https://image.tmdb.org/t/p/w500/vuza0WqY239yBXOadKlGwJsZJFE.jpg', overview: 'Truman Burbank, doğumundan itibaren 24 saat canlı yayınlanan dev bir televizyon şovunun başrolünde olduğundan habersiz yaşamaktadır.', trailerKey: 'dlnmQbPGuls' },
+            { id: 602, mood: 'nostalgic', title: 'Back to the Future', year: 1985, rating: 8.3, runtime: 116, genre: 'Macera • Bilim Kurgu', poster: 'https://image.tmdb.org/t/p/w500/fNOH9f1aA7XRTzl1sAOx9iF553Q.jpg', overview: 'Genç Marty McFly, eksantrik bilim insanı Doc Brown’ın DeLorean zaman makinesiyle yanlışlıkla 1955 yılına gider.', trailerKey: 'qvsgGtivCgs' },
+            { id: 603, mood: 'nostalgic', title: 'Forrest Gump', year: 1994, rating: 8.5, runtime: 142, genre: 'Dram • Romantik', poster: 'https://image.tmdb.org/t/p/w500/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg', overview: 'Düşük IQ’suna rağmen saf kalbiyle Amerikan tarihinin en önemli olaylarının tam ortasında yer alan Forrest Gump’ın unutulmaz yaşam öyküsü.', trailerKey: 'bLvqoHBptjg' },
+            { id: 604, mood: 'nostalgic', title: 'The Shawshank Redemption', year: 1994, rating: 8.7, runtime: 142, genre: 'Dram', poster: 'https://image.tmdb.org/t/p/w500/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg', overview: 'İşlemediği bir suçtan ömür boyu hapse mahkum edilen bankacı Andy Dufresne’in Shawshank Hapishanesi’ndeki umut ve dostluk hikayesi.', trailerKey: '6hB3S9bIaco' }
+        ];
+
+        // Başlangıç
+        document.addEventListener('DOMContentLoaded', () => {
+            updateApiStatusUI();
+            updateFavBadge();
+            fetchMovies();
+        });
+
+        function selectMood(mood, btnElement) {
+            currentMood = mood;
+            document.querySelectorAll('.mood-card').forEach(c => c.classList.remove('active'));
+            btnElement.classList.add('active');
+            document.getElementById('sectionTitle').textContent = MOOD_CONFIG[mood].title;
+            fetchMovies();
+        }
+
+        // Ana Veri Çekme Fonksiyonu (Canlı TMDB API + Demo Fallback)
+        async function fetchMovies() {
+            const loader = document.getElementById('loader');
+            const grid = document.getElementById('moviesGrid');
+            const minRating = parseFloat(document.getElementById('ratingFilter').value);
+            const maxDuration = document.getElementById('durationFilter').value;
+
+            loader.classList.remove('hidden');
+            grid.innerHTML = '';
+            document.getElementById('errorBanner').classList.add('hidden');
+
+            if (apiKey) {
+                try {
+                    const config = MOOD_CONFIG[currentMood];
+                    let url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&language=tr-TR&sort_by=popularity.desc&include_adult=false&with_genres=${config.genres}&vote_average.gte=${minRating}&vote_count.gte=300&primary_release_date.lte=${config.releaseLte}`;
+                    if (maxDuration !== 'all') {
+                        url += `&with_runtime.lte=${maxDuration}`;
+                    }
+
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error('Geçersiz API Anahtarı veya bağlantı hatası.');
+                    const data = await response.json();
+
+                    currentMovies = data.results.slice(0, 12).map(m => ({
+                        id: m.id,
+                        title: m.title,
+                        year: m.release_date ? m.release_date.split('-')[0] : 'N/A',
+                        rating: m.vote_average.toFixed(1),
+                        runtime: null,
+                        genre: MOOD_CONFIG[currentMood].title.split(' ')[0],
+                        poster: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : 'https://via.placeholder.com/500x750/1e293b/94a3b8?text=Afis+Yok',
+                        overview: m.overview || 'Bu film için Türkçe özet bulunmuyor.',
+                        isLiveApi: true
+                    }));
+
+                    document.getElementById('dataSourceBadge').innerHTML = '<span class="text-emerald-400 font-medium">● Canlı TMDB API Verisi</span>';
+                } catch (err) {
+                    showError(err.message + ' Demo verilerine geçildi.');
+                    filterDemoMovies(minRating, maxDuration);
+                }
+            } else {
+                // Demo verisinde kısa gecikme simülasyonu
+                await new Promise(r => setTimeout(r, 250));
+                filterDemoMovies(minRating, maxDuration);
+                document.getElementById('dataSourceBadge').textContent = 'Kaynak: Yerel Demo Veri Tabanı';
+            }
+
+            loader.classList.add('hidden');
+            renderMovies(currentMovies);
+        }
+
+        function filterDemoMovies(minRating, maxDuration) {
+            currentMovies = DEMO_MOVIES.filter(m => {
+                const moodMatch = m.mood === currentMood;
+                const ratingMatch = m.rating >= minRating;
+                const durationMatch = maxDuration === 'all' || m.runtime <= parseInt(maxDuration);
+                return moodMatch && ratingMatch && durationMatch;
+            });
+        }
+
+        function renderMovies(movies) {
+            const grid = document.getElementById('moviesGrid');
+            document.getElementById('resultCount').textContent = `${movies.length} film`;
+
+            if (movies.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 bg-slate-900/50 rounded-2xl border border-slate-800">
+                        <p class="text-slate-400 text-sm mb-2">Seçtiğiniz filtrelere uygun film bulunamadı.</p>
+                        <button onclick="document.getElementById('ratingFilter').value='6.5';document.getElementById('durationFilter').value='all';fetchMovies();" class="text-xs text-indigo-400 hover:underline">Filtreleri Sıfırla</button>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = movies.map(movie => {
+                const isFav = favorites.some(f => f.id === movie.id);
+                return `
+                <div class="movie-card bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col">
+                    <div class="relative aspect-[2/3] bg-slate-800 overflow-hidden group cursor-pointer" onclick="openMovieModal(${movie.id})">
+                        <img src="${movie.poster}" alt="${movie.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80"></div>
+                        <div class="absolute top-3 left-3 bg-slate-950/85 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-bold text-amber-400 flex items-center gap-1 border border-slate-800">
+                            <i class="fa-solid fa-star text-[10px]"></i> ${movie.rating}
+                        </div>
+                        <button onclick="event.stopPropagation(); toggleFavorite(${movie.id})" class="absolute top-3 right-3 w-8 h-8 rounded-lg bg-slate-950/85 backdrop-blur-md border border-slate-800 flex items-center justify-center text-slate-300 hover:text-amber-400 transition">
+                            <i class="${isFav ? 'fa-solid text-amber-400' : 'fa-regular'} fa-bookmark text-xs"></i>
+                        </button>
+                        <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-300 bg-slate-900/90 px-2 py-0.5 rounded">${movie.year}</span>
+                            <span class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-xs font-semibold flex items-center gap-1 shadow-lg">
+                                <i class="fa-solid fa-play text-[10px]"></i> Fragman
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-grow flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-sm text-white line-clamp-1 mb-1" title="${movie.title}">${movie.title}</h4>
+                            <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${movie.overview}</p>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Film Detay & Canlı YouTube Fragman Çekme
+        async function openMovieModal(movieId) {
+            const movie = currentMovies.find(m => m.id === movieId) || DEMO_MOVIES.find(m => m.id === movieId) || favorites.find(m => m.id === movieId);
+            if (!movie) return;
+
+            document.getElementById('modalTitle').textContent = `${movie.title} (${movie.year})`;
+            document.getElementById('modalOverview').textContent = movie.overview;
+            document.getElementById('modalMeta').innerHTML = `
+                <span class="bg-amber-500/15 text-amber-400 px-2.5 py-1 rounded-md font-bold"><i class="fa-solid fa-star mr-1"></i>${movie.rating}</span>
+                ${movie.runtime ? `<span class="bg-slate-800 px-2.5 py-1 rounded-md"><i class="fa-regular fa-clock mr-1"></i>${movie.runtime} dk</span>` : ''}
+                <span class="bg-slate-800 px-2.5 py-1 rounded-md">${movie.genre || 'Film'}</span>
+            `;
+
+            const favBtn = document.getElementById('modalFavBtn');
+            const updateModalFavBtn = () => {
+                const isFav = favorites.some(f => f.id === movie.id);
+                favBtn.innerHTML = isFav
+                    ? '<i class="fa-solid fa-check text-emerald-400"></i> Listede Ekli'
+                    : '<i class="fa-regular fa-bookmark"></i> İzleme Listesine Ekle';
+            };
+            updateModalFavBtn();
+            favBtn.onclick = () => { toggleFavorite(movie.id); updateModalFavBtn(); };
+
+            const trailerBox = document.getElementById('trailerContainer');
+            trailerBox.innerHTML = '<div class="text-xs text-slate-400">Fragman yükleniyor...</div>';
+            document.getElementById('movieModal').classList.remove('hidden');
+
+            let videoKey = movie.trailerKey || null;
+
+            // Canlı API aktifse TMDB /videos endpoint'inden YouTube anahtarını çek
+            if (apiKey && !videoKey) {
+                try {
+                    const res = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${apiKey}`);
+                    const data = await res.json();
+                    const trailer = data.results.find(v => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
+                    if (trailer) videoKey = trailer.key;
+                } catch (e) { console.error(e); }
+            }
+
+            if (videoKey) {
+                trailerBox.innerHTML = `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoKey}?autoplay=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            } else {
+                trailerBox.innerHTML = `
+                    <div class="text-center p-6">
+                        <i class="fa-brands fa-youtube text-3xl text-red-500 mb-2"></i>
+                        <p class="text-xs text-slate-400 mb-3">Doğrudan gömülü fragman bulunamadı.</p>
+                        <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' ' + movie.year + ' fragman')}" target="_blank" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold inline-block">YouTube'da Ara</a>
+                    </div>`;
+            }
+        }
+
+        function closeMovieModal() {
+            document.getElementById('movieModal').classList.add('hidden');
+            document.getElementById('trailerContainer').innerHTML = '';
+        }
+
+        function pickRandomMovie() {
+            if (currentMovies.length === 0) return;
+            const random = currentMovies[Math.floor(Math.random() * currentMovies.length)];
+            openMovieModal(random.id);
+        }
+
+        // İzleme Listesi (LocalStorage)
+        function toggleFavorite(movieId) {
+            const idx = favorites.findIndex(f => f.id === movieId);
+            if (idx > -1) {
+                favorites.splice(idx, 1);
+            } else {
+                const movie = currentMovies.find(m => m.id === movieId) || DEMO_MOVIES.find(m => m.id === movieId);
+                if (movie) favorites.push(movie);
+            }
+            localStorage.setItem('movie_favorites', JSON.stringify(favorites));
+            updateFavBadge();
+            renderMovies(currentMovies);
+        }
+
+        function updateFavBadge() {
+            document.getElementById('favCountBadge').textContent = favorites.length;
+        }
+
+        function openFavoritesModal() {
+            const list = document.getElementById('favoritesList');
+            if (favorites.length === 0) {
+                list.innerHTML = '<p class="text-center text-slate-400 text-sm py-8">İzleme listeniz henüz boş. Beğendiğiniz filmlerin sağ üstündeki kaydet ikonuna tıklayın.</p>';
+            } else {
+                list.innerHTML = favorites.map(m => `
+                    <div class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="closeFavoritesModal();openMovieModal(${m.id})">
+                            <img src="${m.poster}" class="w-10 h-14 object-cover rounded-md">
+                            <div>
+                                <div class="font-bold text-sm text-white">${m.title}</div>
+                                <div class="text-xs text-slate-400">${m.year} • ⭐ ${m.rating}</div>
+                            </div>
+                        </div>
+                        <button onclick="toggleFavorite(${m.id});openFavoritesModal()" class="text-slate-400 hover:text-red-400 p-2"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('favoritesModal').classList.remove('hidden');
+        }
+
+        function closeFavoritesModal() {
+            document.getElementById('favoritesModal').classList.add('hidden');
+        }
+
+        // API Key Modal Yönetimi
+        function openApiModal() {
+            document.getElementById('apiKeyInput').value = apiKey;
+            document.getElementById('apiModal').classList.remove('hidden');
+        }
+        function closeApiModal() {
+            document.getElementById('apiModal').classList.add('hidden');
+        }
+        function saveApiKey() {
+            const val = document.getElementById('apiKeyInput').value.trim();
+            if (!val) return;
+            apiKey = val;
+            localStorage.setItem('tmdb_api_key', apiKey);
+            updateApiStatusUI();
+            closeApiModal();
+            fetchMovies();
+        }
+        function clearApiKey() {
+            apiKey = '';
+            localStorage.removeItem('tmdb_api_key');
+            document.getElementById('apiKeyInput').value = '';
+            updateApiStatusUI();
+            closeApiModal();
+            fetchMovies();
+        }
+        function updateApiStatusUI() {
+            const btn = document.getElementById('apiStatusBtn');
+            if (apiKey) {
+                btn.className = 'px-3.5 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-sm font-medium transition flex items-center gap-2';
+                btn.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>Canlı API</span>';
+            } else {
+                btn.className = 'px-3.5 py-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-sm font-medium transition flex items-center gap-2';
+                btn.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span><span>Demo Modu</span>';
+            }
+        }
+        function showError(msg) {
+            document.getElementById('errorText').textContent = msg;
+            document.getElementById('errorBanner').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
